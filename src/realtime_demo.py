@@ -9,9 +9,9 @@ import numpy as np
 import torch
 from torchvision import transforms
 
-from models.resnet_emotion import EmotionResNet
-from emote_mapping import IDX_TO_EMOTION, EMOTION_TO_EMOTE
-from data.fer_dataset import NUM_CLASSES
+from src.models.resnet_emotion import EmotionResNet
+from src.emote_mapping import IDX_TO_EMOTION, EMOTION_TO_EMOTE
+from src.data.fer_dataset import NUM_CLASSES
 
 
 def parse_args():
