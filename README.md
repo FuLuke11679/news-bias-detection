@@ -41,7 +41,7 @@ Build a real-time system that:
 
 Detects a user’s facial expression from a webcam stream
 
-Classifies the emotion (angry, disgust, fear, happy, neutral, sad)
+Classifies the emotion (angry, disgust, fear, happy, neutral, sadm surprise)
 
 Maps that emotion to a Clash Royale emote
 

@@ -84,6 +84,16 @@ def main():
 
     # Use the class names discovered by ImageFolder (ensures correct ordering)
     label_names = list(test_loader.dataset.classes)
+    # Per-class accuracy = diagonal / sum of row (true samples per class)
+    row_sums = cm.sum(axis=1).astype(float)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        per_class_acc = np.diag(cm).astype(float) / row_sums
+    print("\nPer-class accuracy:")
+    for name, acc_c, n in zip(label_names, per_class_acc, row_sums):
+        if np.isnan(acc_c):
+            print(f"  {name}: No samples (n=0)")
+        else:
+            print(f"  {name}: {acc_c:.3f}  (n={int(n)})")
     print("\nClassification report:")
     print(classification_report(all_labels, all_preds, target_names=label_names))
 

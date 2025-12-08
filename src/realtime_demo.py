@@ -2,9 +2,16 @@
 
 import argparse
 import os
+import sys
 from typing import Tuple, Dict
 
-import cv2
+try:
+    import cv2
+    _cv2_import_error = None
+except Exception as e:  # pragma: no cover - environment dependent
+    cv2 = None
+    _cv2_import_error = e
+
 import numpy as np
 import torch
 from torchvision import transforms
@@ -28,7 +35,14 @@ def parse_args():
         type=str,
         default="data/emotes",  # <- your emotes folder
     )
-    return parser.parse_args()
+
+    # Use parse_known_args so accidental/stray tokens don't crash the demo.
+    # If unknown args are present, warn the user and continue.
+    args, unknown = parser.parse_known_args()
+    if unknown:
+        print(f"[WARN] realtime_demo received unknown CLI arguments: {unknown}")
+        print("These will be ignored. If you intended to pass them, check for shell quoting or extra characters.")
+    return args
 
 
 def build_preprocess_transform():
@@ -62,14 +76,18 @@ def load_emote_images(assets_dir: str) -> Dict[str, np.ndarray]:
         return emote_images
 
     for fname in os.listdir(assets_dir):
-        if not fname.lower().endswith((".png", ".jpg", ".jpeg")):
+        # support common image formats including webp
+        if not fname.lower().endswith((".png", ".jpg", ".jpeg", ".webp")):
             continue
         emote_name = os.path.splitext(fname)[0]  # 'angry' from 'angry.png'
         img_path = os.path.join(assets_dir, fname)
         img = cv2.imread(img_path, cv2.IMREAD_UNCHANGED)  # keep alpha if present
         if img is not None:
             emote_images[emote_name] = img
-    print(f"Loaded {len(emote_images)} emote images from {assets_dir}")
+    if emote_images:
+        print(f"Loaded {len(emote_images)} emote images from {assets_dir}: {sorted(list(emote_images.keys()))}")
+    else:
+        print(f"[WARN] No emote images loaded from {assets_dir}. Check filenames and supported extensions.")
     return emote_images
 
 
@@ -79,6 +97,16 @@ def overlay_emote_image(frame: np.ndarray, emote_img: np.ndarray, x: int = 10, y
     Handles alpha channel if emote_img has it.
     """
     if emote_img is None:
+        return frame
+
+    # Handle single-channel (grayscale) images by converting to BGR
+    if emote_img.ndim == 2:
+        emote_img = cv2.cvtColor(emote_img, cv2.COLOR_GRAY2BGR)
+
+    # Safety: if for some reason the image does not have 3 or 4 channels,
+    # attempt to convert or skip overlay.
+    if emote_img.ndim < 3 or emote_img.shape[2] not in (3, 4):
+        # skip overlay (leave frame unchanged)
         return frame
 
     h, w = emote_img.shape[:2]
@@ -105,6 +133,16 @@ def overlay_emote_image(frame: np.ndarray, emote_img: np.ndarray, x: int = 10, y
 
 def main():
     args = parse_args()
+
+    if cv2 is None:
+        print("\n[ERROR] OpenCV (cv2) is not available in this Python environment.")
+        if _cv2_import_error is not None:
+            print(f"Import error: {_cv2_import_error}")
+        print("Install OpenCV with one of the following commands and re-run:")
+        print("  # pip (recommended): pip install opencv-python")
+        print("  # headless / CI: pip install opencv-python-headless")
+        print("  # conda: conda install -c conda-forge opencv")
+        sys.exit(2)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
