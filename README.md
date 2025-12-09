@@ -5,6 +5,63 @@ This project trains a deep learning model to recognize human facial expressions 
 
 This repository implements a complete, modular ML pipeline that satisfies strict reproducibility and grading requirements.
 
+## What it does
+
+In one sentence: a webcam-driven facial-emotion classifier that displays the matching Clash Royale emote in real time.
+
+In more detail: the code trains a CNN (baseline and a transfer-learned ResNet) on the FER-2013-style folder dataset, evaluates models with accuracy and macro-F1, saves the best checkpoint, and runs a low-latency demo that overlays emote images on webcam frames.
+
+## Quick Start
+
+1. Install dependencies (see `SETUP.md`):
+
+```bash
+pip install -r requirements.txt
+```
+
+Note: if you are on a very new Python (3.13+) and pip fails to find compatible `torch`/`torchvision` wheels, follow the PyTorch install instructions at https://pytorch.org and install `torch`/`torchvision` first using the provided command (for CPU or your CUDA version), then run `pip install -r requirements.txt`.
+
+2. Train (small smoke run):
+
+```bash
+python -m src.train --train_dir data/train --test_dir data/test --epochs 1 --batch_size 8 --checkpoint_dir models/checkpoints
+```
+
+3. Evaluate:
+
+```bash
+python -m src.eval --test_dir data/test --checkpoint_path models/checkpoints/best_resnet.pt
+```
+
+4. Run real-time demo:
+
+```bash
+python -m src.realtime_demo --checkpoint_path models/checkpoints/best_resnet.pt --emote_assets_dir data/emotes
+```
+
+## Quick verification (smoke tests)
+
+After installation, run these quick checks to confirm the environment and scripts:
+
+```bash
+# Python + pip are from the venv
+which python; python --version; which pip; pip --version
+
+# Torch import
+python -c "import torch; print('torch', torch.__version__, 'cuda_available=', torch.cuda.is_available())"
+
+# Run a tiny train/eval smoke (1 epoch, small batch) to validate wiring
+python -m src.train --train_dir data/train --test_dir data/test --epochs 1 --batch_size 8 --checkpoint_dir models/checkpoints
+python -m src.eval --test_dir data/test --checkpoint_path models/checkpoints/best_resnet.pt
+```
+
+## Video Links
+
+Demo video (non-technical): videos/demo.mp4  
+Technical walkthrough: videos/technical_walkthrough.mp4
+
+Replace these with hosted links (YouTube/Vimeo) if available.
+
 ## 📂 Directory Structure
 
 project_root/
@@ -112,20 +169,20 @@ models/checkpoints/best_resnet.pt
 
 ## 📊 Evaluation
 
-To evaluate the trained model:
+To evaluate the trained model run:
 
-python -m src.eval --train_dir data/train --test_dir data/test
+```bash
+python -m src.eval --test_dir data/test --checkpoint_path models/checkpoints/best_resnet.pt
+```
 
+The evaluation script prints accuracy, macro-F1, a confusion matrix, and a full classification report.
 
-This outputs:
+Example quantitative results (from a trained run saved under `models/checkpoints/metrics.csv`):
 
-Test accuracy
+- Final validation accuracy: ~0.676
+- Final validation macro-F1: ~0.656
 
-Macro-F1 score
-
-Confusion matrix
-
-Full classification report
+These numbers are illustrative — use the `--checkpoint_path` flag to evaluate any saved model. The project also includes confusion-matrix plotting in `src/eval.py` and notebook visualizations under `notebooks/`.
 
 ## 🎥 Real-Time Demo (Webcam App)
 
@@ -204,6 +261,16 @@ numpy, pandas, scikit-learn
 
 Feel free to open an issue or request help if something breaks.
 Contributions are welcome via pull request.
+
+## Individual Contributions
+
+If this was a group project, list each person's contributions here. Example (replace with real names):
+
+- Alice — data preprocessing, EDA, baseline model
+- Bob — ResNet transfer learning, hyperparameter tuning, training scripts
+- Carol — real-time demo, emote assets, documentation
+
+If you are the sole author, replace this section with a short note about which parts you implemented.
 
 ## ⭐ Acknowledgments
 
